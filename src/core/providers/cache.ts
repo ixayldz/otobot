@@ -13,6 +13,20 @@ interface ModelCache {
   models: Record<Provider, string[]>;
 }
 
+function supportedModelIds(provider: Provider): Set<string> {
+  return new Set(DEFAULT_MODELS[provider]);
+}
+
+function filterSupported(provider: Provider, modelIds: string[]): string[] {
+  const allowed = supportedModelIds(provider);
+  return modelIds.filter((modelId) => allowed.has(modelId));
+}
+
+function filterSupportedRuntime(provider: Provider, models: ModelInfo[]): ModelInfo[] {
+  const allowed = supportedModelIds(provider);
+  return models.filter((model) => allowed.has(model.modelId));
+}
+
 export async function loadModelCache(projectRoot: string): Promise<ModelCache | null> {
   const filePath = join(projectRoot, CACHE_PATH);
   try {
@@ -41,7 +55,7 @@ async function listModelsRuntime(projectRoot: string, provider: Provider): Promi
 
   try {
     const adapter = getProviderAdapter(provider);
-    const models = await adapter.listModelsLive(apiKey);
+    const models = filterSupportedRuntime(provider, await adapter.listModelsLive(apiKey));
     if (models.length === 0) {
       return null;
     }
@@ -69,7 +83,7 @@ export async function listModels(projectRoot: string, provider: Provider): Promi
   }
 
   const cache = await loadModelCache(projectRoot);
-  const cached = cache?.models[provider] ?? [];
+  const cached = filterSupported(provider, cache?.models[provider] ?? []);
   if (cached.length > 0) {
     return cached.map((modelId) => ({ provider, modelId, source: "cache" as const }));
   }
