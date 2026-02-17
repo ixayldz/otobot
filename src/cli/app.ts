@@ -23,9 +23,12 @@ import {
   setRoles,
   parseRoleToken,
   listKeyStatuses,
+  getApiKey,
   setApiKey,
   deleteApiKey,
   checkAllProviderHealth,
+  generateProviderChatCompletion,
+  type ProviderChatMessage,
 } from "../core/providers/index.js";
 import { checkReadiness } from "../core/readiness/index.js";
 import { inspectRepo } from "../core/repo/index.js";
@@ -38,11 +41,35 @@ import { withBuildTelemetry, withCommandTelemetry, withProviderHealth } from "..
 import { startWatch, stopWatch, watchStatus } from "../core/watch/index.js";
 import { MetadataDb } from "../db/index.js";
 
+type ChatTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+const CHAT_HISTORY_LIMIT = 12;
+const PRD_CHAT_CONTEXT_LIMIT = 14000;
+const PRD_CHAT_ALLOWED_STATES = new Set([
+  "PRD_LOADED",
+  "INTERVIEWING",
+  "LOCKED",
+  "BOOTSTRAPPED",
+  "HARDENED",
+  "REFRESHED",
+  "PLANNING",
+  "IMPLEMENTING",
+  "REVIEWING",
+  "TESTING",
+  "DEBUGGING",
+  "CHANGE_REQUEST",
+]);
+
 export class OtobotApp {
   private state!: OtobotState;
   private readonly audit: AuditLogger;
   private readonly db: MetadataDb;
   private lastPrdPath: string | null = null;
+  private prdChatEnabled = false;
+  private prdChatHistory: ChatTurn[] = [];
 
   constructor(private readonly projectRoot: string) {
     this.audit = new AuditLogger(projectRoot);
@@ -57,6 +84,15 @@ export class OtobotApp {
       name: "otobot",
       currentState: this.state.state,
     });
+
+    const defaultPrdPath = join(this.projectRoot, "prd.md");
+    if (await this.exists(defaultPrdPath)) {
+      this.lastPrdPath = defaultPrdPath;
+    }
+
+    if (PRD_CHAT_ALLOWED_STATES.has(this.state.state)) {
+      this.prdChatEnabled = true;
+    }
   }
 
   private async exists(path: string): Promise<boolean> {
@@ -225,6 +261,149 @@ export class OtobotApp {
     await saveState(this.projectRoot, this.state);
   }
 
+  private naturalLanguageChatAllowed(): boolean {
+    return this.prdChatEnabled && PRD_CHAT_ALLOWED_STATES.has(this.state.state);
+  }
+
+  private trimChatHistory(): void {
+    if (this.prdChatHistory.length > CHAT_HISTORY_LIMIT) {
+      this.prdChatHistory = this.prdChatHistory.slice(this.prdChatHistory.length - CHAT_HISTORY_LIMIT);
+    }
+  }
+
+  private async resolvePrdPathForChat(): Promise<string> {
+    const candidates = [this.lastPrdPath, join(this.projectRoot, "prd.md")].filter((path): path is string => Boolean(path));
+    for (const candidate of candidates) {
+      if (await this.exists(candidate)) {
+        this.lastPrdPath = candidate;
+        return candidate;
+      }
+    }
+
+    throw new Error("No PRD found. Run /read <path> before starting natural-language chat.");
+  }
+
+  private buildPrdChatSystemPrompt(prdRaw: string): string {
+    const limitedPrd =
+      prdRaw.length > PRD_CHAT_CONTEXT_LIMIT
+        ? `${prdRaw.slice(0, PRD_CHAT_CONTEXT_LIMIT)}\n\n[PRD content truncated to fit model context.]`
+        : prdRaw;
+
+    return [
+      "You are Otobot's PRD copilot.",
+      "Focus only on improving the currently loaded PRD and implementation readiness.",
+      "Keep answers concise and actionable in Turkish unless user requests another language.",
+      "When suggesting changes, prefer numbered edits and include concrete wording.",
+      "Do not claim any file was edited unless explicitly instructed through commands.",
+      "",
+      "Current PRD:",
+      "```md",
+      limitedPrd,
+      "```",
+    ].join("\n");
+  }
+
+  private async prdChat(input: string): Promise<string> {
+    const userMessage = input.trim();
+    if (!userMessage) {
+      return "";
+    }
+
+    if (!this.naturalLanguageChatAllowed()) {
+      return "Natural-language PRD chat is disabled in current state. Run /read first or use /chat on.";
+    }
+
+    const prdPath = await this.resolvePrdPathForChat();
+    const parsed = await parsePrd(prdPath);
+    const { provider, modelId } = this.state.activeProvider;
+    const apiKey = await getApiKey(this.projectRoot, provider);
+
+    if (!apiKey) {
+      const keyStatuses = await listKeyStatuses(this.projectRoot);
+      const preferredFallback = (["google", "openai", "anthropic"] as const).find((candidate) => keyStatuses[candidate]);
+      const fallbackSuggestion =
+        preferredFallback && preferredFallback !== provider
+          ? ` Try: /model set ${preferredFallback} ${
+              preferredFallback === "google"
+                ? "gemini-2.5-pro"
+                : preferredFallback === "openai"
+                  ? "gpt-5.2"
+                  : "claude-sonnet-4"
+            }`
+          : "";
+
+      return `No API key for active provider (${provider}). Configure with /key set ${provider} <KEY>.${fallbackSuggestion}`;
+    }
+
+    const messages: ProviderChatMessage[] = [
+      {
+        role: "system",
+        content: this.buildPrdChatSystemPrompt(parsed.raw),
+      },
+      ...this.prdChatHistory.map((turn) => ({
+        role: turn.role,
+        content: turn.content,
+      })),
+      {
+        role: "user",
+        content: userMessage,
+      },
+    ];
+
+    const reply = await generateProviderChatCompletion({
+      provider,
+      modelId,
+      apiKey,
+      messages,
+      maxOutputTokens: 900,
+    });
+
+    this.prdChatHistory.push({ role: "user", content: userMessage });
+    this.prdChatHistory.push({ role: "assistant", content: reply });
+    this.trimChatHistory();
+
+    await this.audit.info("prd.chat", "PRD chat response generated", {
+      provider,
+      modelId,
+      prdPath,
+      inputChars: userMessage.length,
+      outputChars: reply.length,
+      historyTurns: this.prdChatHistory.length,
+    });
+
+    return reply.trim();
+  }
+
+  private async chatCommand(args: string[]): Promise<string> {
+    const first = (args[0] ?? "status").toLowerCase();
+
+    if (first === "status") {
+      return `Chat status: enabled=${this.prdChatEnabled} state=${this.state.state} historyTurns=${this.prdChatHistory.length} provider=${this.state.activeProvider.provider}:${this.state.activeProvider.modelId}`;
+    }
+
+    if (first === "on") {
+      this.prdChatEnabled = true;
+      return "Natural-language PRD chat enabled.";
+    }
+
+    if (first === "off") {
+      this.prdChatEnabled = false;
+      return "Natural-language PRD chat disabled.";
+    }
+
+    if (first === "reset") {
+      this.prdChatHistory = [];
+      return "PRD chat history cleared.";
+    }
+
+    const message = args.join(" ").trim();
+    if (!message) {
+      return "Usage: /chat on|off|status|reset|<message>";
+    }
+
+    return this.prdChat(message);
+  }
+
   async run(rawInput: string): Promise<string> {
     const input = rawInput.trim();
     if (!input) {
@@ -232,9 +411,16 @@ export class OtobotApp {
     }
 
     const intent = !input.startsWith("/") ? resolveIntent(input) : null;
-    const resolved = intent ? [intent.command, ...intent.args] : input.split(/\s+/);
+    let command = "";
+    let args: string[] = [];
 
-    const [command, ...args] = resolved;
+    if (!input.startsWith("/") && !intent && this.naturalLanguageChatAllowed()) {
+      command = "/chat-nl";
+      args = [input];
+    } else {
+      const resolved = intent ? [intent.command, ...intent.args] : input.split(/\s+/);
+      [command, ...args] = resolved;
+    }
 
     let hadError = false;
     let result = "";
@@ -260,8 +446,14 @@ export class OtobotApp {
         case "/key":
           result = await this.key(args);
           break;
+        case "/chat":
+          result = await this.chatCommand(args);
+          break;
         case "/read":
           result = await this.readPrd(args);
+          break;
+        case "/chat-nl":
+          result = await this.prdChat(args.join(" ").trim());
           break;
         case "/interview":
           result = await this.interview();
@@ -333,6 +525,7 @@ export class OtobotApp {
       "/key set <provider> <value>",
       "/key list",
       "/key delete <provider>",
+      "/chat on|off|status|reset|<message>",
       "/read <path>",
       "/interview start",
       "/lock",
@@ -513,8 +706,10 @@ export class OtobotApp {
     await parsePrd(resolved);
     await this.transition("PRD_LOADED");
     this.lastPrdPath = resolved;
+    this.prdChatEnabled = true;
+    this.prdChatHistory = [];
     await this.audit.info("prd.read", "PRD loaded", { path });
-    return `PRD loaded from ${path}`;
+    return `PRD loaded from ${path}\nNatural-language PRD chat enabled. Talk directly, then run /lock when ready.`;
   }
 
   private async interview(): Promise<string> {

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -107,6 +107,59 @@ describe("app integration flow", () => {
         delete process.env.OTOBOT_SKIP_CLAUDE;
       } else {
         process.env.OTOBOT_SKIP_CLAUDE = prev;
+      }
+    }
+  }, 20000);
+
+  test("routes natural-language input to PRD chat after /read", async () => {
+    const prevOpenAiKey = process.env.OTOBOT_OPENAI_KEY;
+    process.env.OTOBOT_OPENAI_KEY = "test-openai-key";
+
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes("/v1/chat/completions")) {
+        return new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: "1. Onboarding akisini PRD'ye ekleyelim.\n2. Login acceptance criteria'sini netlestirelim.",
+                },
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      }
+      return new Response("not found", { status: 404 });
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const root = await createFixtureRoot("otobot-nl-chat-");
+      const app = new OtobotApp(root);
+      await app.init();
+
+      const readResult = await app.run("/read prd.md");
+      expect(readResult).toContain("Natural-language PRD chat enabled");
+
+      const chatResult = await app.run("login ve onboarding gereksinimlerini netlestirelim");
+      expect(chatResult).toContain("Onboarding");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const chatStatus = await app.run("/chat status");
+      expect(chatStatus).toContain("enabled=true");
+    } finally {
+      vi.unstubAllGlobals();
+
+      if (prevOpenAiKey === undefined) {
+        delete process.env.OTOBOT_OPENAI_KEY;
+      } else {
+        process.env.OTOBOT_OPENAI_KEY = prevOpenAiKey;
       }
     }
   }, 20000);

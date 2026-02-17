@@ -35,6 +35,8 @@ pnpm install
 pnpm build
 pnpm dev run "/doctor"
 pnpm dev run "/read prd.md"
+# After /read, you can talk in natural language (no slash) for PRD refinements
+pnpm dev run "login gereksinimlerini netlestirelim"
 pnpm dev run "/interview start"
 pnpm dev run "/lock"
 pnpm dev run "/bootstrap"
@@ -48,6 +50,7 @@ pnpm dev run "/ready"
 - PRD flow: `/read`, `/interview start`, `/lock`
 - Build flow: `/bootstrap`, `/harden`, `/refresh`, `/build`
 - Provider and keys: `/model`, `/roles`, `/key`
+- PRD chat: `/chat on|off|status|reset|<message>` or direct natural language after `/read`
 - Runtime control: `/watch start|status|stop`, `/pause`, `/resume`
 - Policy and sandbox: `/policy pack list|apply <name>`, `/sandbox on|off|status`, `/sandbox run <command>`
 - Plugin and audit: `/plugin list|install|remove`, `/audit prune [--days N]`
