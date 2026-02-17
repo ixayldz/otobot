@@ -178,4 +178,26 @@ describe("app integration flow", () => {
       }
     }
   }, 20000);
+
+  test("supports new PRD intake after shipped", async () => {
+    const prev = process.env.OTOBOT_SKIP_CLAUDE;
+    process.env.OTOBOT_SKIP_CLAUDE = "1";
+
+    try {
+      const root = await createFixtureRoot("otobot-restart-cycle-");
+      const app = await setupReadyApp(root);
+
+      expect(await app.run("/model set openai gpt-5.2")).toContain("Model updated");
+      expect(await app.run("/build")).toContain("Build succeeded");
+
+      expect(await app.run("/read prd.md")).toContain("PRD loaded");
+      expect(await app.run("/interview start")).toContain("Interview completed");
+    } finally {
+      if (prev === undefined) {
+        delete process.env.OTOBOT_SKIP_CLAUDE;
+      } else {
+        process.env.OTOBOT_SKIP_CLAUDE = prev;
+      }
+    }
+  }, 20000);
 });

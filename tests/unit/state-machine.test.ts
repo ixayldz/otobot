@@ -14,4 +14,8 @@ describe("state machine", () => {
     expect(() => assertTransition("HARDENED", "PLANNING", { hashMismatch: true })).toThrow(StateTransitionError);
     expect(() => assertTransition("HARDENED", "CHANGE_REQUEST", { hashMismatch: true })).not.toThrow();
   });
+
+  test("allows starting a new PRD cycle after shipped", () => {
+    expect(() => assertTransition("SHIPPED", "PRD_LOADED")).not.toThrow();
+  });
 });
