@@ -146,6 +146,7 @@ describe("app integration flow", () => {
 
       const readResult = await app.run("/read prd.md");
       expect(readResult).toContain("Natural-language PRD chat enabled");
+      expect(await app.run("/read prd.md")).toContain("PRD loaded");
 
       const chatResult = await app.run("login ve onboarding gereksinimlerini netlestirelim");
       expect(chatResult).toContain("Onboarding");

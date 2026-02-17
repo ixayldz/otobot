@@ -704,7 +704,7 @@ export class OtobotApp {
     const path = args[0] ?? "prd.md";
     const resolved = join(this.projectRoot, path);
     await parsePrd(resolved);
-    await this.transition("PRD_LOADED");
+    await this.transitionIfNeeded("PRD_LOADED");
     this.lastPrdPath = resolved;
     this.prdChatEnabled = true;
     this.prdChatHistory = [];
