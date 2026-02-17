@@ -1,0 +1,44 @@
+{
+  "version": "1.2",
+  "contractVersion": "1.2",
+  "lockedAt": "2026-02-17T21:38:52.288Z",
+  "hashAlgo": "sha256",
+  "hashScope": [
+    "assumptions.md",
+    "decisions.md",
+    "prd.locked.md"
+  ],
+  "prdHash": "05b3be163d212f3112451a9d8deb222f2648abd705f97c0df23c6d0bbac56683",
+  "scope": {
+    "in": [
+      "MVP workflow",
+      "PRD lock",
+      "state-machine gates"
+    ],
+    "out": [
+      "auto production deploy"
+    ]
+  },
+  "changeRequestPolicy": {
+    "required": true,
+    "approvers": [
+      "project-owner"
+    ],
+    "approvalMode": "any_of",
+    "requiredApprovals": 1,
+    "auditRequired": true,
+    "requiredEvidence": [
+      "prd-diff",
+      "review-note",
+      "test-proof"
+    ],
+    "approvalSlaHours": 24
+  },
+  "stackHints": {
+    "language": "ts",
+    "frameworks": [
+      "node-cli"
+    ],
+    "db": "sqlite"
+  }
+}

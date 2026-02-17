@@ -1,0 +1,41 @@
+name: nightly-real-e2e
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      OTOBOT_OPENAI_KEY: ${{ secrets.OTOBOT_OPENAI_KEY }}
+      OTOBOT_GEMINI_KEY: ${{ secrets.OTOBOT_GEMINI_KEY }}
+      OTOBOT_ANTHROPIC_KEY: ${{ secrets.OTOBOT_ANTHROPIC_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Run smoke checks
+        run: |
+          node dist/index.js run "/doctor"
+          node dist/index.js run "/model list openai"
+          node dist/index.js run "/model list google"
+          node dist/index.js run "/model list anthropic"

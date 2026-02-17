@@ -1,0 +1,39 @@
+{
+  "name": "otobot",
+  "version": "0.1.0",
+  "description": "PRD-to-production capability-aware CLI orchestrator",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "otobot": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean --target node20",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:contract": "vitest run tests/contract",
+    "test:integration": "vitest run tests/integration",
+    "typecheck": "tsc --noEmit",
+    "lint": "pnpm typecheck",
+    "format": "prettier --write ."
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "execa": "^9.5.2",
+    "yaml": "^2.8.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "eslint": "^9.34.0",
+    "prettier": "^3.6.2",
+    "tsup": "^8.2.4",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2",
+    "vitest": "^2.0.5"
+  }
+}

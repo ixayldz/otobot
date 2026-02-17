@@ -1,0 +1,351 @@
+{
+  "version": "1.2",
+  "epics": [
+    {
+      "id": "EPIC-001",
+      "name": "PRD Derived Epic",
+      "stories": [
+        {
+          "id": "STORY-001",
+          "name": "PRD Driven Story",
+          "tasks": [
+            {
+              "id": "TASK-001",
+              "name": "Implement 0) Dokuman Amaci",
+              "acceptanceCriteria": [
+                "Bu PRD, Otobot icin tek kaynak gercektir (SoT). `idea.md` ve `research.md` destekleyici dokumanlardir.",
+                "Normatif anahtar kelimeler:",
+                "- `MUST`: zorunlu"
+              ],
+              "risk": "medium",
+              "expectedTouched": [
+                "src/0-dokuman-amaci.ts"
+              ],
+              "tests": [
+                "pnpm test"
+              ],
+              "verificationSteps": [
+                "run targeted checks",
+                "verify no scope drift"
+              ],
+              "rollbackPlan": [
+                "revert changes for TASK-001"
+              ],
+              "blastRadius": "0-dokuman-amaci",
+              "dependsOn": [],
+              "ownerRole": "executor",
+              "estimate": 1,
+              "retries": 1,
+              "status": "planned",
+              "sourcePrdSections": [
+                "0) Dokuman Amaci"
+              ],
+              "qualityGates": [
+                "review",
+                "tests"
+              ],
+              "riskControls": [
+                "limit blast radius",
+                "verify scope lock hash before release"
+              ]
+            },
+            {
+              "id": "TASK-002",
+              "name": "Implement 1) Problem ve Hedef",
+              "acceptanceCriteria": [
+                "### 1.1 Problem",
+                "LLM destekli kod uretim sureclerinde temel sorunlar:",
+                "1. PRD belirsizligi -> scope drift"
+              ],
+              "risk": "medium",
+              "expectedTouched": [
+                "src/1-problem-ve-hedef.ts"
+              ],
+              "tests": [
+                "pnpm test"
+              ],
+              "verificationSteps": [
+                "run targeted checks",
+                "verify no scope drift"
+              ],
+              "rollbackPlan": [
+                "revert changes for TASK-002"
+              ],
+              "blastRadius": "1-problem-ve-hedef",
+              "dependsOn": [
+                "TASK-001"
+              ],
+              "ownerRole": "executor",
+              "estimate": 1,
+              "retries": 1,
+              "status": "planned",
+              "sourcePrdSections": [
+                "1) Problem ve Hedef"
+              ],
+              "qualityGates": [
+                "review",
+                "tests"
+              ],
+              "riskControls": [
+                "limit blast radius",
+                "verify scope lock hash before release"
+              ]
+            },
+            {
+              "id": "TASK-003",
+              "name": "Implement 2) Kapsam (Release Bazli)",
+              "acceptanceCriteria": [
+                "### 2.1 MVP (v0.1) In-Scope",
+                "- REPL komutlari: `/help`, `/model`, `/roles`, `/key`, `/read`, `/interview`, `/lock`, `/bootstrap`, `/harden`, `/refresh`, `/build`, `/doctor`, `/exit`",
+                "- PRD parser + unknown detector + interview engine"
+              ],
+              "risk": "medium",
+              "expectedTouched": [
+                "src/2-kapsam-release-bazli.ts"
+              ],
+              "tests": [
+                "pnpm test"
+              ],
+              "verificationSteps": [
+                "run targeted checks",
+                "verify no scope drift"
+              ],
+              "rollbackPlan": [
+                "revert changes for TASK-003"
+              ],
+              "blastRadius": "2-kapsam-release-bazli",
+              "dependsOn": [
+                "TASK-002"
+              ],
+              "ownerRole": "executor",
+              "estimate": 1,
+              "retries": 1,
+              "status": "planned",
+              "sourcePrdSections": [
+                "2) Kapsam (Release Bazli)"
+              ],
+              "qualityGates": [
+                "review",
+                "tests"
+              ],
+              "riskControls": [
+                "limit blast radius",
+                "verify scope lock hash before release"
+              ]
+            },
+            {
+              "id": "TASK-004",
+              "name": "Implement 3) Persona ve Kullanim Amaci",
+              "acceptanceCriteria": [
+                "1. Solo Builder: hizli ama kontrollu MVP ister",
+                "2. Tech Lead: lock, audit, risk yonetimi ister",
+                "3. Hackathon Team: hizli scaffold + gorunur ilerleme ister"
+              ],
+              "risk": "medium",
+              "expectedTouched": [
+                "src/3-persona-ve-kullanim-amaci.ts"
+              ],
+              "tests": [
+                "pnpm test"
+              ],
+              "verificationSteps": [
+                "run targeted checks",
+                "verify no scope drift"
+              ],
+              "rollbackPlan": [
+                "revert changes for TASK-004"
+              ],
+              "blastRadius": "3-persona-ve-kullanim-amaci",
+              "dependsOn": [
+                "TASK-003"
+              ],
+              "ownerRole": "executor",
+              "estimate": 1,
+              "retries": 1,
+              "status": "planned",
+              "sourcePrdSections": [
+                "3) Persona ve Kullanim Amaci"
+              ],
+              "qualityGates": [
+                "review",
+                "tests"
+              ],
+              "riskControls": [
+                "limit blast radius",
+                "verify scope lock hash before release"
+              ]
+            },
+            {
+              "id": "TASK-005",
+              "name": "Implement 4) Kullanici Akislari (Canonical)",
+              "acceptanceCriteria": [
+                "### 4.1 Baslatma ve Hazirlik",
+                "1. Kullanici `otobot` calistirir",
+                "2. `/doctor` ile ortam ve capability check alir"
+              ],
+              "risk": "medium",
+              "expectedTouched": [
+                "src/4-kullanici-akislari-canonical.ts"
+              ],
+              "tests": [
+                "pnpm test"
+              ],
+              "verificationSteps": [
+                "run targeted checks",
+                "verify no scope drift"
+              ],
+              "rollbackPlan": [
+                "revert changes for TASK-005"
+              ],
+              "blastRadius": "4-kullanici-akislari-canonical",
+              "dependsOn": [
+                "TASK-004"
+              ],
+              "ownerRole": "executor",
+              "estimate": 1,
+              "retries": 1,
+              "status": "planned",
+              "sourcePrdSections": [
+                "4) Kullanici Akislari (Canonical)"
+              ],
+              "qualityGates": [
+                "review",
+                "tests"
+              ],
+              "riskControls": [
+                "limit blast radius",
+                "verify scope lock hash before release"
+              ]
+            },
+            {
+              "id": "TASK-006",
+              "name": "Implement 5) Fonksiyonel Gereksinimler",
+              "acceptanceCriteria": [
+                "### 5.1 REPL Komut Sozlesmesi (MVP)",
+                "- `/model set <provider> <model_id>`",
+                "- `/roles set planner=<provider:model_id|claude_code> reviewer=<...> executor=<claude_code>`"
+              ],
+              "risk": "medium",
+              "expectedTouched": [
+                "src/5-fonksiyonel-gereksinimler.ts"
+              ],
+              "tests": [
+                "pnpm test"
+              ],
+              "verificationSteps": [
+                "run targeted checks",
+                "verify no scope drift"
+              ],
+              "rollbackPlan": [
+                "revert changes for TASK-006"
+              ],
+              "blastRadius": "5-fonksiyonel-gereksinimler",
+              "dependsOn": [
+                "TASK-005"
+              ],
+              "ownerRole": "executor",
+              "estimate": 1,
+              "retries": 1,
+              "status": "planned",
+              "sourcePrdSections": [
+                "5) Fonksiyonel Gereksinimler"
+              ],
+              "qualityGates": [
+                "review",
+                "tests"
+              ],
+              "riskControls": [
+                "limit blast radius",
+                "verify scope lock hash before release"
+              ]
+            },
+            {
+              "id": "TASK-007",
+              "name": "Implement 6) State Machine ve Gecis Kurallari",
+              "acceptanceCriteria": [
+                "### 6.1 State Listesi",
+                "`IDLE -> PRD_LOADED -> INTERVIEWING -> LOCKED -> BOOTSTRAPPED -> HARDENED -> REFRESHED -> PLANNING -> IMPLEMENTING -> REVIEWING -> TESTING -> SHIPPED`",
+                "Ek state'ler:"
+              ],
+              "risk": "medium",
+              "expectedTouched": [
+                "src/6-state-machine-ve-gecis-kuralla.ts"
+              ],
+              "tests": [
+                "pnpm test"
+              ],
+              "verificationSteps": [
+                "run targeted checks",
+                "verify no scope drift"
+              ],
+              "rollbackPlan": [
+                "revert changes for TASK-007"
+              ],
+              "blastRadius": "6-state-machine-ve-gecis-kuralla",
+              "dependsOn": [
+                "TASK-006"
+              ],
+              "ownerRole": "executor",
+              "estimate": 1,
+              "retries": 1,
+              "status": "planned",
+              "sourcePrdSections": [
+                "6) State Machine ve Gecis Kurallari"
+              ],
+              "qualityGates": [
+                "review",
+                "tests"
+              ],
+              "riskControls": [
+                "limit blast radius",
+                "verify scope lock hash before release"
+              ]
+            },
+            {
+              "id": "TASK-008",
+              "name": "Implement 7) Veri, Saklama ve Sozlesmeler",
+              "acceptanceCriteria": [
+                "### 7.1 `.otobot/state.json` (Public Contract)",
+                "```json",
+                "{"
+              ],
+              "risk": "medium",
+              "expectedTouched": [
+                "src/7-veri-saklama-ve-sozlesmeler.ts"
+              ],
+              "tests": [
+                "pnpm test"
+              ],
+              "verificationSteps": [
+                "run targeted checks",
+                "verify no scope drift"
+              ],
+              "rollbackPlan": [
+                "revert changes for TASK-008"
+              ],
+              "blastRadius": "7-veri-saklama-ve-sozlesmeler",
+              "dependsOn": [
+                "TASK-007"
+              ],
+              "ownerRole": "executor",
+              "estimate": 1,
+              "retries": 1,
+              "status": "planned",
+              "sourcePrdSections": [
+                "7) Veri, Saklama ve Sozlesmeler"
+              ],
+              "qualityGates": [
+                "review",
+                "tests"
+              ],
+              "riskControls": [
+                "limit blast radius",
+                "verify scope lock hash before release"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

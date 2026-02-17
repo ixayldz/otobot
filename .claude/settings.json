@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "defaultMode": "plan",
+    "deny": [
+      ".env",
+      ".env.*",
+      "secrets/**",
+      "**/*.pem",
+      "**/*.key",
+      "**/id_rsa*"
+    ],
+    "ask": [
+      "curl *",
+      "wget *",
+      "rm -rf *",
+      "git push *"
+    ],
+    "allow": [
+      "git status",
+      "git diff",
+      "pnpm test",
+      "pnpm build",
+      "pnpm test:contract",
+      "pnpm test:integration"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      ".claude/hooks/protect-files"
+    ],
+    "PostToolUse": [
+      ".claude/hooks/post-edit-check"
+    ]
+  }
+}
