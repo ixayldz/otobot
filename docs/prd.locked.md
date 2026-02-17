@@ -118,7 +118,7 @@ LLM destekli kod uretim sureclerinde temel sorunlar:
 ## 5) Fonksiyonel Gereksinimler
 
 ### 5.1 REPL Komut Sozlesmesi (MVP)
-- `/model set <provider> <model_id>`
+- `/model set <provider> <model_id>` (MUST planner+reviewer ve provider-tip executor rolunu aktif modele senkronlar)
 - `/roles set planner=<provider:model_id|claude_code> reviewer=<...> executor=<claude_code>`
 - `/key set <provider>`
 - `/read <path>`
@@ -148,7 +148,8 @@ Kurallar:
 Default role policy:
 - `planner`: kullanicinin sectigi provider/model
 - `executor`: `claude_code`
-- `reviewer`: kullanicinin secimi veya varsayilan policy modeli
+- `reviewer`: kullanicinin sectigi provider/model
+- Not: `/roles set` ile gecici override MAY yapilir; sonraki `/model set` tum provider-tip rollerde yeniden senkron uygular.
 
 ### 5.3 API Key Yonetimi
 Oncelik sirasi:

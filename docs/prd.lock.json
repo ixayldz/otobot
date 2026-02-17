@@ -1,14 +1,14 @@
 {
   "version": "1.2",
   "contractVersion": "1.2",
-  "lockedAt": "2026-02-17T22:23:23.531Z",
+  "lockedAt": "2026-02-17T22:30:35.857Z",
   "hashAlgo": "sha256",
   "hashScope": [
     "assumptions.md",
     "decisions.md",
     "prd.locked.md"
   ],
-  "prdHash": "c35048e571033d8c403666481b228367aeeab5de8d02cb1e87160819dcdb4e6c",
+  "prdHash": "da2852ae72a8695a53c28b412b443fd45dec10080e52c2164b0e354705f0126b",
   "scope": {
     "in": [
       "MVP workflow",

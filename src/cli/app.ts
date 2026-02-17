@@ -639,12 +639,25 @@ export class OtobotApp {
       throw new Error(`Unknown model_id for ${provider}: ${modelId}`);
     }
 
+    const previousExecutorType = this.state.roles.executor.type;
     this.state = setActiveModel(this.state, provider, modelId);
     await saveState(this.projectRoot, this.state);
     await this.markModelSelection(provider, modelId);
-    await this.audit.info("model.set", "Active model updated", { provider, modelId });
+    await this.audit.info("model.set", "Active model and roles updated", {
+      provider,
+      modelId,
+      synchronizedRoles: {
+        planner: `${this.state.roles.planner.type === "provider" ? `${this.state.roles.planner.provider}:${this.state.roles.planner.modelId}` : this.state.roles.planner.type}`,
+        reviewer: `${this.state.roles.reviewer.type === "provider" ? `${this.state.roles.reviewer.provider}:${this.state.roles.reviewer.modelId}` : this.state.roles.reviewer.type}`,
+        executor:
+          this.state.roles.executor.type === "provider"
+            ? `${this.state.roles.executor.provider}:${this.state.roles.executor.modelId}`
+            : this.state.roles.executor.type,
+      },
+    });
 
-    return `Model updated: ${provider}:${modelId}`;
+    const executorSyncNote = previousExecutorType === "provider" ? ", executor" : "";
+    return `Model updated: ${provider}:${modelId} (roles synced: planner, reviewer${executorSyncNote})`;
   }
 
   private async roles(args: string[]): Promise<string> {

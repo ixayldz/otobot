@@ -1,16 +1,28 @@
 import type { OtobotState, Provider, RoleModel } from "../../contracts/state.js";
 
 export function setActiveModel(state: OtobotState, provider: Provider, modelId: string): OtobotState {
+  const syncedProviderRole: RoleModel = {
+    type: "provider",
+    provider,
+    modelId,
+  };
+
+  const syncedExecutor: RoleModel =
+    state.roles.executor.type === "provider"
+      ? {
+          type: "provider",
+          provider,
+          modelId,
+        }
+      : state.roles.executor;
+
   return {
     ...state,
     activeProvider: { provider, modelId },
     roles: {
-      ...state.roles,
-      planner: {
-        type: "provider",
-        provider,
-        modelId,
-      },
+      planner: syncedProviderRole,
+      reviewer: { ...syncedProviderRole },
+      executor: syncedExecutor,
     },
   };
 }

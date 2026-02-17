@@ -49,7 +49,7 @@ pnpm dev run "/ready"
 - General: `/help`, `/doctor`, `/ready`, `/exit`
 - PRD flow: `/read`, `/interview start`, `/lock`
 - Build flow: `/bootstrap`, `/harden`, `/refresh`, `/build`
-- Provider and keys: `/model`, `/roles`, `/key`
+- Provider and keys: `/model`, `/roles`, `/key` (`/model set` syncs planner+reviewer and provider-type executor)
 - PRD chat: `/chat on|off|status|reset|<message>` or direct natural language after `/read`
 - Runtime control: `/watch start|status|stop`, `/pause`, `/resume`
 - Policy and sandbox: `/policy pack list|apply <name>`, `/sandbox on|off|status`, `/sandbox run <command>`

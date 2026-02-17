@@ -111,6 +111,80 @@ describe("app integration flow", () => {
     }
   }, 20000);
 
+  test("model set synchronizes reviewer and provider-based executor roles", async () => {
+    const prev = process.env.OTOBOT_SKIP_CLAUDE;
+    process.env.OTOBOT_SKIP_CLAUDE = "1";
+
+    try {
+      const root = await createFixtureRoot("otobot-role-sync-");
+      const app = await setupReadyApp(root);
+
+      expect(await app.run("/roles set planner=openai:gpt-5.2 reviewer=anthropic:claude-opus-4-6 executor=openai:gpt-5.2")).toContain(
+        "Roles updated",
+      );
+      expect(await app.run("/model set google gemini-3-pro-preview")).toContain("roles synced");
+
+      const firstRaw = await readFile(join(root, ".otobot", "state.json"), "utf8");
+      const firstState = JSON.parse(firstRaw) as {
+        roles: {
+          planner: { type: string; provider?: string; modelId?: string };
+          reviewer: { type: string; provider?: string; modelId?: string };
+          executor: { type: string; provider?: string; modelId?: string };
+        };
+      };
+
+      expect(firstState.roles.planner).toEqual({
+        type: "provider",
+        provider: "google",
+        modelId: "gemini-3-pro-preview",
+      });
+      expect(firstState.roles.reviewer).toEqual({
+        type: "provider",
+        provider: "google",
+        modelId: "gemini-3-pro-preview",
+      });
+      expect(firstState.roles.executor).toEqual({
+        type: "provider",
+        provider: "google",
+        modelId: "gemini-3-pro-preview",
+      });
+
+      expect(await app.run("/roles set planner=google:gemini-3-pro-preview reviewer=google:gemini-3-pro-preview executor=claude_code")).toContain(
+        "Roles updated",
+      );
+      expect(await app.run("/model set openai gpt-5.2")).toContain("roles synced");
+
+      const secondRaw = await readFile(join(root, ".otobot", "state.json"), "utf8");
+      const secondState = JSON.parse(secondRaw) as {
+        roles: {
+          planner: { type: string; provider?: string; modelId?: string };
+          reviewer: { type: string; provider?: string; modelId?: string };
+          executor: { type: string; provider?: string; modelId?: string };
+        };
+      };
+
+      expect(secondState.roles.planner).toEqual({
+        type: "provider",
+        provider: "openai",
+        modelId: "gpt-5.2",
+      });
+      expect(secondState.roles.reviewer).toEqual({
+        type: "provider",
+        provider: "openai",
+        modelId: "gpt-5.2",
+      });
+      expect(secondState.roles.executor).toEqual({
+        type: "claude_code",
+      });
+    } finally {
+      if (prev === undefined) {
+        delete process.env.OTOBOT_SKIP_CLAUDE;
+      } else {
+        process.env.OTOBOT_SKIP_CLAUDE = prev;
+      }
+    }
+  }, 20000);
+
   test("routes natural-language input to PRD chat after /read", async () => {
     const prevOpenAiKey = process.env.OTOBOT_OPENAI_KEY;
     process.env.OTOBOT_OPENAI_KEY = "test-openai-key";
