@@ -14,7 +14,7 @@ export interface ProviderAdapter {
 }
 
 export const DEFAULT_MODELS: Record<Provider, string[]> = {
-  openai: ["gpt-5", "gpt-5.2", "gpt-5-mini"],
-  google: ["gemini-2.5-pro", "gemini-2.5-flash"],
-  anthropic: ["claude-sonnet-4", "claude-opus-4-1"],
+  openai: ["gpt-5.2"],
+  google: ["gemini-3-pro-preview"],
+  anthropic: ["claude-opus-4-6"],
 };

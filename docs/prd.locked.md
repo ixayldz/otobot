@@ -266,7 +266,7 @@ Ek state'ler:
   "roles": {
     "planner": { "type": "provider", "provider": "openai", "modelId": "gpt-5.2" },
     "executor": { "type": "claude_code" },
-    "reviewer": { "type": "provider", "provider": "anthropic", "modelId": "claude-opus-4-1" }
+    "reviewer": { "type": "provider", "provider": "anthropic", "modelId": "claude-opus-4-6" }
   },
   "capabilities": {
     "printMode": true,

@@ -325,10 +325,10 @@ export class OtobotApp {
         preferredFallback && preferredFallback !== provider
           ? ` Try: /model set ${preferredFallback} ${
               preferredFallback === "google"
-                ? "gemini-2.5-pro"
+                ? "gemini-3-pro-preview"
                 : preferredFallback === "openai"
                   ? "gpt-5.2"
-                  : "claude-sonnet-4"
+                  : "claude-opus-4-6"
             }`
           : "";
 

@@ -54,7 +54,7 @@ export function createDefaultState(projectPath: string): OtobotState {
       reviewer: {
         type: "provider",
         provider: "anthropic",
-        modelId: "claude-opus-4-1",
+        modelId: "claude-opus-4-6",
       },
     },
     capabilities: defaultCapabilities(),
