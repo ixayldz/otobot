@@ -239,6 +239,60 @@ describe("app integration flow", () => {
     }
   }, 20000);
 
+  test("returns local fallback when provider quota is exceeded", async () => {
+    const prevKey = process.env.OTOBOT_GEMINI_KEY;
+    process.env.OTOBOT_GEMINI_KEY = "test-google-key";
+
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+
+      if (url.includes("/v1beta/models?key=")) {
+        return new Response(
+          JSON.stringify({
+            models: [{ name: "models/gemini-3-pro-preview" }],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+
+      if (url.includes(":generateContent?key=")) {
+        return new Response(
+          JSON.stringify({
+            error: {
+              code: 429,
+              message: "You exceeded your current quota",
+            },
+          }),
+          { status: 429, headers: { "content-type": "application/json" } },
+        );
+      }
+
+      return new Response("not found", { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const root = await createFixtureRoot("otobot-chat-quota-");
+      const app = new OtobotApp(root);
+      await app.init();
+
+      await app.run("/model set google gemini-3-pro-preview");
+      await app.run("/read prd.md");
+
+      const response = await app.run("prd yi analiz ettin mi");
+      expect(response).toContain("Provider quota/rate-limit");
+      expect(response).toContain("local PRD analizi");
+      expect(response).toContain("next.step: /interview start");
+    } finally {
+      vi.unstubAllGlobals();
+      if (prevKey === undefined) {
+        delete process.env.OTOBOT_GEMINI_KEY;
+      } else {
+        process.env.OTOBOT_GEMINI_KEY = prevKey;
+      }
+    }
+  }, 20000);
+
   test("review failure returns state to IMPLEMENTING", async () => {
     const prevSkip = process.env.OTOBOT_SKIP_CLAUDE;
     const prevReview = process.env.OTOBOT_FORCE_REVIEW_FAIL;

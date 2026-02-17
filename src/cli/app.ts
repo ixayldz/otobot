@@ -303,6 +303,32 @@ export class OtobotApp {
     ].join("\n");
   }
 
+  private isQuotaOrRateLimitError(message: string): boolean {
+    return /\b429\b|quota|rate limit|resource exhausted|too many requests/i.test(message);
+  }
+
+  private compactErrorMessage(error: unknown): string {
+    const raw = error instanceof Error ? error.message : String(error);
+    return raw.replace(/\s+/g, " ").trim().slice(0, 220);
+  }
+
+  private buildLocalPrdFallbackReply(parsed: Awaited<ReturnType<typeof parsePrd>>, userMessage: string): string {
+    const unknowns = detectUnknowns(parsed).filter((item) => item.impact === "high" || item.impact === "medium");
+    const sectionTitles = parsed.sections
+      .map((section) => section.title)
+      .filter((title) => title && title !== "ROOT")
+      .slice(0, 6);
+
+    return [
+      "Provider quota/rate-limit nedeniyle model yaniti alinamadi; local PRD analizi modunda devam ediyorum.",
+      `- sections: ${sectionTitles.length > 0 ? sectionTitles.join(", ") : "none-detected"}`,
+      `- unknowns.high_medium: ${unknowns.length}`,
+      ...unknowns.slice(0, 3).map((item, idx) => `- unknown.${idx + 1}: [${item.impact}] ${item.category} -> ${item.question}`),
+      `- message.context: ${userMessage.slice(0, 120)}`,
+      "- next.step: /interview start, sonra /lock",
+    ].join("\n");
+  }
+
   private async prdChat(input: string): Promise<string> {
     const userMessage = input.trim();
     if (!userMessage) {
@@ -350,13 +376,29 @@ export class OtobotApp {
       },
     ];
 
-    const reply = await generateProviderChatCompletion({
-      provider,
-      modelId,
-      apiKey,
-      messages,
-      maxOutputTokens: 900,
-    });
+    let reply = "";
+    try {
+      reply = await generateProviderChatCompletion({
+        provider,
+        modelId,
+        apiKey,
+        messages,
+        maxOutputTokens: 900,
+      });
+    } catch (error) {
+      const compact = this.compactErrorMessage(error);
+      await this.audit.warn("prd.chat.degraded", "Provider chat unavailable", {
+        provider,
+        modelId,
+        error: compact,
+      });
+
+      if (this.isQuotaOrRateLimitError(compact)) {
+        return this.buildLocalPrdFallbackReply(parsed, userMessage);
+      }
+
+      return `Provider chat unavailable (${provider}:${modelId}). ${compact}\nContinue with /interview start and /lock.`;
+    }
 
     this.prdChatHistory.push({ role: "user", content: userMessage });
     this.prdChatHistory.push({ role: "assistant", content: reply });
