@@ -328,4 +328,28 @@ describe("app integration flow", () => {
       }
     }
   }, 20000);
+
+  test("allows re-read and re-lock from locked state", async () => {
+    const prev = process.env.OTOBOT_SKIP_CLAUDE;
+    process.env.OTOBOT_SKIP_CLAUDE = "1";
+
+    try {
+      const root = await createFixtureRoot("otobot-reread-locked-");
+      const app = new OtobotApp(root);
+      await app.init();
+
+      expect(await app.run("/read prd.md")).toContain("PRD loaded");
+      expect(await app.run("/interview start")).toContain("Interview completed");
+      expect(await app.run("/lock")).toContain("Lock created");
+
+      expect(await app.run("/read prd.md")).toContain("PRD loaded");
+      expect(await app.run("/lock")).toContain("Lock created");
+    } finally {
+      if (prev === undefined) {
+        delete process.env.OTOBOT_SKIP_CLAUDE;
+      } else {
+        process.env.OTOBOT_SKIP_CLAUDE = prev;
+      }
+    }
+  }, 20000);
 });

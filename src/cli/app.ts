@@ -717,6 +717,12 @@ export class OtobotApp {
     const path = args[0] ?? "prd.md";
     const resolved = join(this.projectRoot, path);
     await parsePrd(resolved);
+
+    const directReadStates = new Set(["IDLE", "PRD_LOADED", "INTERVIEWING", "SHIPPED", "CHANGE_REQUEST"]);
+    if (!directReadStates.has(this.state.state)) {
+      await this.transition("CHANGE_REQUEST");
+    }
+
     await this.transitionIfNeeded("PRD_LOADED");
     this.lastPrdPath = resolved;
     this.prdChatEnabled = true;
@@ -752,7 +758,7 @@ export class OtobotApp {
     const insights = await inspectRepo(this.projectRoot);
     const lock = await createLockArtifacts(this.projectRoot, prdPath, insights);
 
-    await this.transition("LOCKED");
+    await this.transitionIfNeeded("LOCKED");
     await this.audit.info("prd.lock", "PRD lock generated", { hash: lock.prdHash });
     return `Lock created with hash ${lock.prdHash.slice(0, 12)}...`;
   }
